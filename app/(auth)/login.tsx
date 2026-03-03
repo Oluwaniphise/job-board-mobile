@@ -1,19 +1,25 @@
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
+import { useState } from 'react';
 
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSession } from '@/providers/session-provider';
 
 type LoginFormValues = {
-  email: string;
+  username: string;
+  password: string;
 };
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme() ?? 'light';
+  const router = useRouter();
+  const { signIn } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const palette = Colors[colorScheme];
   const {
@@ -21,37 +27,40 @@ export default function LoginScreen() {
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<LoginFormValues>({
-    defaultValues: { email: '' },
+    defaultValues: { username: '', password: '' },
     mode: 'onChange',
   });
 
-  const onSubmit = (_data: LoginFormValues) => {};
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await signIn(data.username);
+      router.replace('/(tabs)');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in with your email to continue.">
+    <AuthLayout title="Welcome back" subtitle="Log in with your username and password to continue.">
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', android: undefined, web: undefined })}
         style={styles.flex}
       >
         <View style={styles.form}>
           <View style={styles.field}>
-            <ThemedText type="defaultSemiBold">Email</ThemedText>
+            <ThemedText type="defaultSemiBold">Username</ThemedText>
             <Controller
               control={control}
-              name="email"
+              name="username"
               rules={{
-                required: 'Email is required',
-                pattern: {
-                  value: /\S+@\S+\.\S+/,
-                  message: 'Enter a valid email address',
-                },
+                required: 'Username is required',
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   autoCapitalize="none"
-                  autoComplete="email"
-                  keyboardType="email-address"
-                  placeholder="you@company.com"
+                  autoComplete="username"
+                  placeholder="johndoe"
                   placeholderTextColor={palette.icon}
                   value={value}
                   onBlur={onBlur}
@@ -59,7 +68,7 @@ export default function LoginScreen() {
                   style={[
                     styles.input,
                     {
-                      borderColor: errors.email ? '#e5484d' : palette.icon,
+                      borderColor: errors.username ? '#e5484d' : palette.icon,
                       color: palette.text,
                       backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
                     },
@@ -67,23 +76,62 @@ export default function LoginScreen() {
                 />
               )}
             />
-            {errors.email ? (
-              <ThemedText style={styles.errorText}>{errors.email.message}</ThemedText>
+            {errors.username ? (
+              <ThemedText style={styles.errorText}>{errors.username.message}</ThemedText>
+            ) : null}
+          </View>
+          <View style={styles.field}>
+            <ThemedText type="defaultSemiBold">Password</ThemedText>
+            <Controller
+              control={control}
+              name="password"
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters',
+                },
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  secureTextEntry
+                  placeholder="Enter your password"
+                  placeholderTextColor={palette.icon}
+                  value={value}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  style={[
+                    styles.input,
+                    {
+                      borderColor: errors.password ? '#e5484d' : palette.icon,
+                      color: palette.text,
+                      backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                    },
+                  ]}
+                />
+              )}
+            />
+            {errors.password ? (
+              <ThemedText style={styles.errorText}>{errors.password.message}</ThemedText>
             ) : null}
           </View>
 
           <Pressable
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
             style={[
               styles.primaryButton,
               {
-                backgroundColor: isValid ? palette.tint : palette.icon,
-                opacity: isValid ? 1 : 0.55,
+                backgroundColor: isValid && !isSubmitting ? palette.tint : palette.icon,
+                opacity: isValid && !isSubmitting ? 1 : 0.55,
               },
             ]}
             onPress={handleSubmit(onSubmit)}
           >
-            <ThemedText style={styles.primaryButtonText}>Send login link</ThemedText>
+            <ThemedText style={styles.primaryButtonText}>
+              {isSubmitting ? 'Logging in...' : 'Log in'}
+            </ThemedText>
           </Pressable>
 
           <View style={styles.footer}>

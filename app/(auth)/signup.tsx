@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -16,6 +16,7 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useSession } from "@/providers/session-provider";
 
 type RoleOption = "Candidate" | "Employer";
 
@@ -51,6 +52,8 @@ async function createUser(payload: SignupFormValues & { role: RoleOption }) {
 export default function SignupScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const [role, setRole] = useState<RoleOption>("Candidate");
+  const router = useRouter();
+  const { signIn } = useSession();
 
   const palette = Colors[colorScheme];
   const {
@@ -63,6 +66,10 @@ export default function SignupScreen() {
   });
   const signupMutation = useMutation({
     mutationFn: (data: SignupFormValues) => createUser({ ...data, role }),
+    onSuccess: async (_, variables) => {
+      await signIn(variables.email);
+      router.replace("/(tabs)");
+    },
   });
   const onSubmit = (data: SignupFormValues) => {
     signupMutation.mutate(data);

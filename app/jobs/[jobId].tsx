@@ -1,0 +1,102 @@
+import { Link, useLocalSearchParams } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/themed-text';
+import { getJobById } from '@/constants/jobs';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSession } from '@/providers/session-provider';
+
+export default function JobDetailsScreen() {
+  const { jobId } = useLocalSearchParams<{ jobId: string }>();
+  const colorScheme = useColorScheme() ?? 'light';
+  const palette = Colors[colorScheme];
+  const { hasApplied, getApplication } = useSession();
+
+  const job = getJobById(jobId);
+
+  if (!job) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+        <ThemedText type="subtitle">Job not found</ThemedText>
+      </View>
+    );
+  }
+
+  const applied = hasApplied(job.id);
+  const application = getApplication(job.id);
+
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: palette.background }]} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <ThemedText type="title">{job.title}</ThemedText>
+        <ThemedText>{job.company}</ThemedText>
+        <ThemedText>{`${job.location} • ${job.type}`}</ThemedText>
+        <ThemedText>{job.salaryRange}</ThemedText>
+      </View>
+
+      <View style={styles.section}>
+        <ThemedText type="subtitle">Job description</ThemedText>
+        <ThemedText>{job.description}</ThemedText>
+      </View>
+
+      <View style={styles.section}>
+        <ThemedText type="subtitle">Requirements</ThemedText>
+        {job.requirements.map((requirement) => (
+          <ThemedText key={requirement}>{`\u2022 ${requirement}`}</ThemedText>
+        ))}
+      </View>
+
+      {applied && application ? (
+        <View style={[styles.appliedCard, { borderColor: palette.icon }]}>
+          <ThemedText type="defaultSemiBold">Application submitted</ThemedText>
+          <ThemedText>{`Resume: ${application.resumeName}`}</ThemedText>
+          <ThemedText>{`Date: ${new Date(application.appliedAt).toLocaleDateString()}`}</ThemedText>
+        </View>
+      ) : null}
+
+      <Link href={`/jobs/${job.id}/apply`} asChild>
+        <Pressable style={[styles.button, { backgroundColor: palette.tint }]}>
+          <ThemedText style={styles.buttonLabel}>{applied ? 'Update application' : 'Apply now'}</ThemedText>
+        </Pressable>
+      </Link>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+    gap: 18,
+    paddingBottom: 30,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    gap: 8,
+  },
+  section: {
+    gap: 8,
+  },
+  appliedCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+  },
+  button: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  buttonLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

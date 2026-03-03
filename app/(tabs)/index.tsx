@@ -1,161 +1,95 @@
-import { Image } from 'expo-image';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { JOB_LISTINGS } from '@/constants/jobs';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSession } from '@/providers/session-provider';
 
-export default function HomeScreen() {
+export default function DashboardScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const palette = Colors[colorScheme];
+  const router = useRouter();
+  const { user, applications } = useSession();
+
+  const appliedJobIds = useMemo(() => new Set(applications.map((application) => application.jobId)), [applications]);
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={[styles.container, { backgroundColor: palette.background }]}>
+      <View style={styles.header}>
+        <ThemedText type="title">Dashboard</ThemedText>
+        <ThemedText>Welcome {user?.username}. Browse jobs and apply with your resume.</ThemedText>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-
-      <ThemedView style={styles.authCard}>
-        <View style={styles.authHeader}>
-          <ThemedText type="subtitle">Get started</ThemedText>
-          <ThemedText>Join as a candidate or employer.</ThemedText>
-        </View>
-        <View style={styles.authActions}>
-          <Link href="/signup" asChild>
-            <Pressable style={[styles.primaryButton, { backgroundColor: palette.tint }]}>
-              <ThemedText style={styles.primaryButtonText}>Create account</ThemedText>
-            </Pressable>
-          </Link>
-          <Link href="/login" asChild>
+      <FlatList
+        data={JOB_LISTINGS}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        renderItem={({ item }) => {
+          const hasApplied = appliedJobIds.has(item.id);
+          return (
             <Pressable
+              onPress={() => router.push(`/jobs/${item.id}`)}
               style={[
-                styles.secondaryButton,
-                { borderColor: palette.tint, backgroundColor: 'transparent' },
+                styles.card,
+                {
+                  borderColor: palette.icon,
+                  backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                },
               ]}
             >
-              <ThemedText style={[styles.secondaryButtonText, { color: palette.tint }]}>
-                Log in
-              </ThemedText>
+              <View style={styles.cardHeader}>
+                <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+                {hasApplied ? <ThemedText style={styles.appliedBadge}>Applied</ThemedText> : null}
+              </View>
+              <ThemedText>{item.company}</ThemedText>
+              <ThemedText>{`${item.location} - ${item.type}`}</ThemedText>
+              <ThemedText>{item.salaryRange}</ThemedText>
+              <ThemedText>{item.summary}</ThemedText>
             </Pressable>
-          </Link>
-        </View>
-      </ThemedView>
-    </ParallaxScrollView>
+          );
+        }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  header: {
     gap: 8,
+    marginBottom: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  listContent: {
+    paddingBottom: 24,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  authCard: {
-    gap: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  authHeader: {
+  card: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
     gap: 6,
   },
-  authActions: {
-    gap: 12,
-  },
-  primaryButton: {
-    borderRadius: 999,
-    paddingVertical: 14,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
     alignItems: 'center',
   },
-  primaryButtonText: {
+  appliedBadge: {
+    backgroundColor: '#0a7ea4',
     color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  secondaryButton: {
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });
+
