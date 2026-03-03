@@ -1,13 +1,18 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const palette = Colors[colorScheme];
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -74,6 +79,32 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+
+      <ThemedView style={styles.authCard}>
+        <View style={styles.authHeader}>
+          <ThemedText type="subtitle">Get started</ThemedText>
+          <ThemedText>Join as a candidate or employer.</ThemedText>
+        </View>
+        <View style={styles.authActions}>
+          <Link href="/signup" asChild>
+            <Pressable style={[styles.primaryButton, { backgroundColor: palette.tint }]}>
+              <ThemedText style={styles.primaryButtonText}>Create account</ThemedText>
+            </Pressable>
+          </Link>
+          <Link href="/login" asChild>
+            <Pressable
+              style={[
+                styles.secondaryButton,
+                { borderColor: palette.tint, backgroundColor: 'transparent' },
+              ]}
+            >
+              <ThemedText style={[styles.secondaryButtonText, { color: palette.tint }]}>
+                Log in
+              </ThemedText>
+            </Pressable>
+          </Link>
+        </View>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
@@ -94,5 +125,37 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  authCard: {
+    gap: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  authHeader: {
+    gap: 6,
+  },
+  authActions: {
+    gap: 12,
+  },
+  primaryButton: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
