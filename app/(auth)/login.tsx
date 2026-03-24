@@ -1,25 +1,32 @@
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 
-import { Link, useRouter } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { Link, useRouter } from "expo-router";
+import { Controller, useForm } from "react-hook-form";
 
-import { AuthLayout } from '@/components/auth/auth-layout';
-import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSession } from '@/providers/session-provider';
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { ThemedText } from "@/components/themed-text";
+import { Colors } from "@/constants/theme";
+import { useLoginMutation } from "@/hooks/use-auth-mutations";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useSessionStore, type SessionUser } from "@/stores/session-store";
 
 type LoginFormValues = {
-  username: string;
+  email: string;
   password: string;
 };
 
 export default function LoginScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const router = useRouter();
-  const { signIn } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const setUser = useSessionStore((state) => state.setUser);
+  const loginMutation = useLoginMutation();
 
   const palette = Colors[colorScheme];
   const {
@@ -27,40 +34,56 @@ export default function LoginScreen() {
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<LoginFormValues>({
-    defaultValues: { username: '', password: '' },
-    mode: 'onChange',
+    defaultValues: { email: "", password: "" },
+    mode: "onChange",
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsSubmitting(true);
-    try {
-      await signIn(data.username);
-      router.replace('/(tabs)');
-    } finally {
-      setIsSubmitting(false);
-    }
+    loginMutation.mutate(data, {
+      onSuccess: (response) => {
+        console.log("Login response:", response);
+        const user: SessionUser = {
+          email: response.email,
+          token: response.token,
+        };
+        setUser(user);
+        router.replace("/(tabs)");
+      },
+    });
   };
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in with your username and password to continue.">
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in with your email and password to continue."
+    >
       <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined, web: undefined })}
+        behavior={Platform.select({
+          ios: "padding",
+          android: undefined,
+          web: undefined,
+        })}
         style={styles.flex}
       >
         <View style={styles.form}>
           <View style={styles.field}>
-            <ThemedText type="defaultSemiBold">Username</ThemedText>
+            <ThemedText type="defaultSemiBold">Email</ThemedText>
             <Controller
               control={control}
-              name="username"
+              name="email"
               rules={{
-                required: 'Username is required',
+                required: "Email is required",
+                pattern: {
+                  value: /\S+@\S+\.\S+/,
+                  message: "Enter a valid email",
+                },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   autoCapitalize="none"
-                  autoComplete="username"
-                  placeholder="johndoe"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  placeholder="you@company.com"
                   placeholderTextColor={palette.icon}
                   value={value}
                   onBlur={onBlur}
@@ -68,16 +91,19 @@ export default function LoginScreen() {
                   style={[
                     styles.input,
                     {
-                      borderColor: errors.username ? '#e5484d' : palette.icon,
+                      borderColor: errors.email ? "#e5484d" : palette.icon,
                       color: palette.text,
-                      backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                      backgroundColor:
+                        colorScheme === "light" ? "#ffffff" : "#1f2123",
                     },
                   ]}
                 />
               )}
             />
-            {errors.username ? (
-              <ThemedText style={styles.errorText}>{errors.username.message}</ThemedText>
+            {errors.email ? (
+              <ThemedText style={styles.errorText}>
+                {errors.email.message}
+              </ThemedText>
             ) : null}
           </View>
           <View style={styles.field}>
@@ -86,10 +112,10 @@ export default function LoginScreen() {
               control={control}
               name="password"
               rules={{
-                required: 'Password is required',
+                required: "Password is required",
                 minLength: {
                   value: 8,
-                  message: 'Password must be at least 8 characters',
+                  message: "Password must be at least 8 characters",
                 },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
@@ -105,34 +131,46 @@ export default function LoginScreen() {
                   style={[
                     styles.input,
                     {
-                      borderColor: errors.password ? '#e5484d' : palette.icon,
+                      borderColor: errors.password ? "#e5484d" : palette.icon,
                       color: palette.text,
-                      backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                      backgroundColor:
+                        colorScheme === "light" ? "#ffffff" : "#1f2123",
                     },
                   ]}
                 />
               )}
             />
             {errors.password ? (
-              <ThemedText style={styles.errorText}>{errors.password.message}</ThemedText>
+              <ThemedText style={styles.errorText}>
+                {errors.password.message}
+              </ThemedText>
             ) : null}
           </View>
 
           <Pressable
-            disabled={!isValid || isSubmitting}
+            disabled={!isValid || loginMutation.isPending}
             style={[
               styles.primaryButton,
               {
-                backgroundColor: isValid && !isSubmitting ? palette.tint : palette.icon,
-                opacity: isValid && !isSubmitting ? 1 : 0.55,
+                backgroundColor:
+                  isValid && !loginMutation.isPending
+                    ? palette.tint
+                    : palette.icon,
+                opacity: isValid && !loginMutation.isPending ? 1 : 0.55,
               },
             ]}
             onPress={handleSubmit(onSubmit)}
           >
             <ThemedText style={styles.primaryButtonText}>
-              {isSubmitting ? 'Logging in...' : 'Log in'}
+              {loginMutation.isPending ? "Logging in..." : "Log in"}
             </ThemedText>
           </Pressable>
+
+          {loginMutation.error && (
+            <ThemedText style={styles.errorText}>
+              {loginMutation.error.message || "Login failed"}
+            </ThemedText>
+          )}
 
           <View style={styles.footer}>
             <ThemedText>New here?</ThemedText>
@@ -166,23 +204,23 @@ const styles = StyleSheet.create({
   primaryButton: {
     borderRadius: 999,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
     fontSize: 16,
   },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   link: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   errorText: {
-    color: '#e5484d',
+    color: "#e5484d",
     fontSize: 13,
   },
 });

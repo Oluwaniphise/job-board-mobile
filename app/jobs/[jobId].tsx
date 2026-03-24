@@ -1,23 +1,43 @@
-import { Link, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Link, useLocalSearchParams } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { getJobById } from '@/constants/jobs';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSession } from '@/providers/session-provider';
+import { ThemedText } from "@/components/themed-text";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useJob } from "@/hooks/use-jobs-query";
+import { useSession } from "@/providers/session-provider";
 
 export default function JobDetailsScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const { hasApplied, getApplication } = useSession();
 
-  const job = getJobById(jobId);
+  const { data: job, isLoading, isError } = useJob(jobId);
 
-  if (!job) {
+  if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: palette.background },
+        ]}
+      >
+        <ThemedText type="subtitle">Loading job...</ThemedText>
+      </View>
+    );
+  }
+
+  if (isError || !job) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: palette.background },
+        ]}
+      >
         <ThemedText type="subtitle">Job not found</ThemedText>
       </View>
     );
@@ -27,7 +47,10 @@ export default function JobDetailsScreen() {
   const application = getApplication(job.id);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: palette.background }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: palette.background }]}
+      contentContainerStyle={styles.content}
+    >
       <View style={styles.header}>
         <ThemedText type="title">{job.title}</ThemedText>
         <ThemedText>{job.company}</ThemedText>
@@ -57,7 +80,9 @@ export default function JobDetailsScreen() {
 
       <Link href={`/jobs/${job.id}/apply`} asChild>
         <Pressable style={[styles.button, { backgroundColor: palette.tint }]}>
-          <ThemedText style={styles.buttonLabel}>{applied ? 'Update application' : 'Apply now'}</ThemedText>
+          <ThemedText style={styles.buttonLabel}>
+            {applied ? "Update application" : "Apply now"}
+          </ThemedText>
         </Pressable>
       </Link>
     </ScrollView>
@@ -74,8 +99,8 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     gap: 8,
@@ -92,11 +117,11 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 999,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonLabel: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

@@ -1,4 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -15,8 +14,12 @@ import {
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
+import {
+  useLoginMutation,
+  useSignupMutation,
+} from "@/hooks/use-auth-mutations";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useSession } from "@/providers/session-provider";
+import { SessionUser, useSessionStore } from "@/stores/session-store";
 
 type RoleOption = "Candidate" | "Employer";
 
@@ -27,33 +30,13 @@ type SignupFormValues = {
   passwordHash: string;
 };
 
-const BASE_URL = "https://job-board-napn.onrender.com/api/v1";
-
-async function createUser(payload: SignupFormValues & { role: RoleOption }) {
-  console.log("logged", payload);
-  const response = await fetch(`${BASE_URL}/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    const message =
-      errorBody?.message || errorBody?.error || "Unable to create account.";
-    throw new Error(message);
-  }
-
-  return response.json();
-}
-
 export default function SignupScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const [role, setRole] = useState<RoleOption>("Candidate");
   const router = useRouter();
-  const { signIn } = useSession();
+  const setUser = useSessionStore((state) => state.setUser);
+  const signupMutation = useSignupMutation();
+  const loginMutation = useLoginMutation();
 
   const palette = Colors[colorScheme];
   const {
@@ -64,15 +47,29 @@ export default function SignupScreen() {
     defaultValues: { firstName: "", lastName: "", email: "", passwordHash: "" },
     mode: "onChange",
   });
-  const signupMutation = useMutation({
-    mutationFn: (data: SignupFormValues) => createUser({ ...data, role }),
-    onSuccess: async (_, variables) => {
-      await signIn(variables.email);
-      router.replace("/(tabs)");
-    },
-  });
+
   const onSubmit = (data: SignupFormValues) => {
-    signupMutation.mutate(data);
+    signupMutation.mutate(
+      { ...data, role },
+      {
+        onSuccess: () => {
+          // After signup, login automatically
+          loginMutation.mutate(
+            { email: data.email, password: data.passwordHash },
+            {
+              onSuccess: (loginResponse) => {
+                const user: SessionUser = {
+                  email: loginResponse.email,
+                  token: loginResponse.token,
+                };
+                setUser(user);
+                router.replace("/(tabs)");
+              },
+            },
+          );
+        },
+      },
+    );
   };
   const isFormReady = useMemo(() => isValid, [isValid]);
 
