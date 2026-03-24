@@ -15,6 +15,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useToast } from "@/hooks/use-toast";
 import { useSessionStore, type SessionUser } from "@/stores/session-store";
 
 type LoginFormValues = {
@@ -25,6 +26,7 @@ type LoginFormValues = {
 export default function LoginScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const router = useRouter();
+  const toast = useToast();
   const setUser = useSessionStore((state) => state.setUser);
   const loginMutation = useLoginMutation();
 
@@ -41,13 +43,17 @@ export default function LoginScreen() {
   const onSubmit = async (data: LoginFormValues) => {
     loginMutation.mutate(data, {
       onSuccess: (response) => {
-        console.log("Login response:", response);
         const user: SessionUser = {
           email: response.email,
           token: response.token,
         };
         setUser(user);
+        toast.success("Login successful!");
         router.replace("/(tabs)");
+      },
+      onError: (error) => {
+        const message = error.message;
+        toast.error(message);
       },
     });
   };
@@ -165,12 +171,6 @@ export default function LoginScreen() {
               {loginMutation.isPending ? "Logging in..." : "Log in"}
             </ThemedText>
           </Pressable>
-
-          {loginMutation.error && (
-            <ThemedText style={styles.errorText}>
-              {loginMutation.error.message || "Login failed"}
-            </ThemedText>
-          )}
 
           <View style={styles.footer}>
             <ThemedText>New here?</ThemedText>

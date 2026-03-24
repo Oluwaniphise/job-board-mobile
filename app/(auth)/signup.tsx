@@ -19,6 +19,7 @@ import {
   useSignupMutation,
 } from "@/hooks/use-auth-mutations";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useToast } from "@/hooks/use-toast";
 import { SessionUser, useSessionStore } from "@/stores/session-store";
 
 type RoleOption = "Candidate" | "Employer";
@@ -34,6 +35,7 @@ export default function SignupScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const [role, setRole] = useState<RoleOption>("Candidate");
   const router = useRouter();
+  const toast = useToast();
   const setUser = useSessionStore((state) => state.setUser);
   const signupMutation = useSignupMutation();
   const loginMutation = useLoginMutation();
@@ -63,10 +65,20 @@ export default function SignupScreen() {
                   token: loginResponse.token,
                 };
                 setUser(user);
+                toast.success("Account created successfully!");
                 router.replace("/(tabs)");
+              },
+              onError: (error) => {
+                const message = error.message;
+                toast.error(message);
               },
             },
           );
+        },
+        onError: (error) => {
+          const message =
+            error instanceof Error ? error.message : "Signup failed";
+          toast.error(message);
         },
       },
     );
@@ -295,13 +307,6 @@ export default function SignupScreen() {
                   : "Create account"}
               </ThemedText>
             </Pressable>
-            {signupMutation.isError ? (
-              <ThemedText style={styles.errorText}>
-                {signupMutation.error instanceof Error
-                  ? signupMutation.error.message
-                  : "Unable to create account."}
-              </ThemedText>
-            ) : null}
 
             <View style={styles.footer}>
               <ThemedText>Already have an account?</ThemedText>

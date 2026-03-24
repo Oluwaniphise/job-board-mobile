@@ -1,13 +1,14 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SessionProvider } from "@/providers/session-provider";
@@ -59,6 +60,7 @@ export default function RootLayout() {
           <StatusBar style="auto" />
         </ThemeProvider>
       </SessionProvider>
+      <Toast />
     </QueryClientProvider>
   );
 }
