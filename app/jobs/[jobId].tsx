@@ -11,7 +11,8 @@ export default function JobDetailsScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
-  const { hasApplied, getApplication } = useSession();
+  const { user, hasApplied, getApplication } = useSession();
+  const isEmployer = user?.role === "Employer";
 
   const { data: job, isLoading, isError } = useJob(jobId);
 
@@ -78,13 +79,15 @@ export default function JobDetailsScreen() {
         </View>
       ) : null}
 
-      <Link href={`/jobs/${job.id}/apply`} asChild>
-        <Pressable style={[styles.button, { backgroundColor: palette.tint }]}>
-          <ThemedText style={styles.buttonLabel}>
-            {applied ? "Update application" : "Apply now"}
-          </ThemedText>
-        </Pressable>
-      </Link>
+      {!isEmployer ? (
+        <Link href={`/jobs/${job.id}/apply`} asChild>
+          <Pressable style={[styles.button, { backgroundColor: palette.tint }]}>
+            <ThemedText style={styles.buttonLabel}>
+              {applied ? "Update application" : "Apply now"}
+            </ThemedText>
+          </Pressable>
+        </Link>
+      ) : null}
     </ScrollView>
   );
 }

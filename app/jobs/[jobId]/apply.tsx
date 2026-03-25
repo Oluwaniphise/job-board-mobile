@@ -1,14 +1,14 @@
-import * as DocumentPicker from 'expo-document-picker';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import * as DocumentPicker from "expo-document-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { getJobById } from '@/constants/jobs';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSession } from '@/providers/session-provider';
+import { ThemedText } from "@/components/themed-text";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useJob } from "@/hooks/use-jobs-query";
+import { useSession } from "@/providers/session-provider";
 
 type ApplyFormValues = {
   resumeUrl: string;
@@ -17,14 +17,15 @@ type ApplyFormValues = {
 
 export default function ApplyScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const router = useRouter();
-  const { applyToJob, getApplication } = useSession();
+  const { user, applyToJob, getApplication } = useSession();
   const [pickedResume, setPickedResume] = useState<{ name: string; uri: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const job = getJobById(jobId);
+  const { data: job, isLoading, isError } = useJob(jobId);
+  const isEmployer = user?.role === "Employer";
   const existingApplication = job ? getApplication(job.id) : undefined;
 
   const {
@@ -32,10 +33,21 @@ export default function ApplyScreen() {
     handleSubmit,
     formState: { errors },
   } = useForm<ApplyFormValues>({
-    defaultValues: { resumeUrl: existingApplication?.resumeUri ?? '', coverLetter: existingApplication?.coverLetter ?? '' },
+    defaultValues: {
+      resumeUrl: existingApplication?.resumeUri ?? "",
+      coverLetter: existingApplication?.coverLetter ?? "",
+    },
   });
 
-  if (!job) {
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+        <ThemedText type="subtitle">Loading job...</ThemedText>
+      </View>
+    );
+  }
+
+  if (isError || !job) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
         <ThemedText type="subtitle">Job not found</ThemedText>
@@ -43,10 +55,22 @@ export default function ApplyScreen() {
     );
   }
 
+  if (isEmployer) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+        <ThemedText type="subtitle">Employers cannot apply for jobs.</ThemedText>
+      </View>
+    );
+  }
+
   const pickResume = async () => {
     const result = await DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: false,
-      type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+      type: [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ],
       multiple: false,
     });
 
@@ -60,7 +84,7 @@ export default function ApplyScreen() {
 
   const onSubmit = async (values: ApplyFormValues) => {
     const resumeSource = pickedResume?.uri || values.resumeUrl.trim();
-    const resumeName = pickedResume?.name || 'Resume link';
+    const resumeName = pickedResume?.name || "Resume link";
 
     if (!resumeSource) {
       return;
@@ -87,7 +111,7 @@ export default function ApplyScreen() {
       <ThemedText>Attach your resume using a file picker or paste a resume URL.</ThemedText>
 
       <Pressable onPress={pickResume} style={[styles.pickerButton, { borderColor: palette.icon }]}>
-        <ThemedText type="defaultSemiBold">{pickedResume ? pickedResume.name : 'Choose resume file'}</ThemedText>
+        <ThemedText type="defaultSemiBold">{pickedResume ? pickedResume.name : "Choose resume file"}</ThemedText>
       </Pressable>
 
       <View style={styles.field}>
@@ -101,7 +125,7 @@ export default function ApplyScreen() {
                 return true;
               }
               if (!value.trim()) {
-                return 'Provide a resume URL or select a file.';
+                return "Provide a resume URL or select a file.";
               }
               return true;
             },
@@ -117,9 +141,9 @@ export default function ApplyScreen() {
               style={[
                 styles.input,
                 {
-                  borderColor: errors.resumeUrl ? '#e5484d' : palette.icon,
+                  borderColor: errors.resumeUrl ? "#e5484d" : palette.icon,
                   color: palette.text,
-                  backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
                 },
               ]}
             />
@@ -148,7 +172,7 @@ export default function ApplyScreen() {
                 {
                   borderColor: palette.icon,
                   color: palette.text,
-                  backgroundColor: colorScheme === 'light' ? '#ffffff' : '#1f2123',
+                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
                 },
               ]}
             />
@@ -168,7 +192,11 @@ export default function ApplyScreen() {
         ]}
       >
         <ThemedText style={styles.submitText}>
-          {isSubmitting ? 'Submitting...' : existingApplication ? 'Update application' : 'Submit application'}
+          {isSubmitting
+            ? "Submitting..."
+            : existingApplication
+              ? "Update application"
+              : "Submit application"}
         </ThemedText>
       </Pressable>
     </ScrollView>
@@ -185,8 +213,8 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   field: {
     gap: 8,
@@ -206,21 +234,21 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   submitButton: {
     borderRadius: 999,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   submitText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
     fontSize: 16,
   },
   errorText: {
-    color: '#e5484d',
+    color: "#e5484d",
     fontSize: 13,
   },
 });

@@ -13,6 +13,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const { user, isHydrating, signOut } = useSession();
+  const isEmployer = user?.role === "Employer";
 
   if (isHydrating) {
     return null;
@@ -50,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Applications',
+          title: isEmployer ? "Employer Jobs" : "Applications",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

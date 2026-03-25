@@ -47,8 +47,9 @@ export default function LoginScreen() {
     loginMutation.mutate(data, {
       onSuccess: (response) => {
         const user: SessionUser = {
-          email: response.email,
-          token: response.token,
+          email: response.user.email,
+          token: response.accessToken,
+          role: response.user.role,
         };
         setUser(user);
         toast.success("Login successful!");

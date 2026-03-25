@@ -63,8 +63,9 @@ export default function SignupScreen() {
             {
               onSuccess: (loginResponse) => {
                 const user: SessionUser = {
-                  email: loginResponse.email,
-                  token: loginResponse.token,
+                  email: loginResponse.user.email,
+                  token: loginResponse.accessToken,
+                  role: loginResponse.user.role ?? role,
                 };
                 setUser(user);
                 toast.success("Account created successfully!");

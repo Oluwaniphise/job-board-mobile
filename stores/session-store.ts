@@ -4,6 +4,7 @@ import { create } from "zustand";
 export type SessionUser = {
   email: string;
   token: string;
+  role: "Candidate" | "Employer";
 };
 
 export type JobApplication = {
@@ -29,6 +30,23 @@ type SessionState = {
 const SESSION_USER_KEY = "session_user";
 const JOB_APPLICATIONS_KEY = "job_applications";
 
+function normalizeStoredUser(raw: unknown): SessionUser | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const candidate = raw as Partial<SessionUser>;
+  if (!candidate.email || !candidate.token) {
+    return null;
+  }
+
+  return {
+    email: candidate.email,
+    token: candidate.token,
+    role: candidate.role === "Employer" ? "Employer" : "Candidate",
+  };
+}
+
 export const useSessionStore = create<SessionState>((set, get) => ({
   user: null,
   applications: [],
@@ -42,7 +60,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       ]);
 
       set({
-        user: storedUser ? (JSON.parse(storedUser) as SessionUser) : null,
+        user: storedUser ? normalizeStoredUser(JSON.parse(storedUser)) : null,
         applications: storedApplications
           ? (JSON.parse(storedApplications) as JobApplication[])
           : [],

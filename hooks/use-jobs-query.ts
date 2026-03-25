@@ -4,16 +4,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 export type JobListing = {
   id: string;
   title: string;
-  company: string;
-  location: string;
-  type: "Full-time" | "Part-time" | "Contract";
-  salaryRange: string;
-  summary: string;
+  companyName: string;
   description: string;
+  location: string;
+  jobType: "Full-time" | "Part-time" | "Contract";
+  salaryRange: string;
+  experienceLevel: string;
+  summary: string;
   requirements: string[];
 };
 
 const JOBS_QUERY_KEY = ["jobs"];
+const EMPLOYER_JOBS_QUERY_KEY = ["jobs", "employer"];
 
 export const useJobs = () => {
   return useQuery<JobListing[]>({
@@ -38,9 +40,21 @@ export const useJob = (jobId: string | undefined) => {
   });
 };
 
+export const useEmployerJobs = (enabled = true) => {
+  return useQuery<JobListing[]>({
+    queryKey: EMPLOYER_JOBS_QUERY_KEY,
+    queryFn: async () => {
+      return apiFetch<JobListing[]>(`${API_BASE_URL}/jobs/employer`);
+    },
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
 export const useInvalidateJobs = () => {
   const queryClient = useQueryClient();
   return () => {
     queryClient.invalidateQueries({ queryKey: JOBS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: EMPLOYER_JOBS_QUERY_KEY });
   };
 };

@@ -5,7 +5,7 @@ import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useJobs } from "@/hooks/use-jobs-query";
+import { useEmployerJobs, useJobs } from "@/hooks/use-jobs-query";
 import { useSession } from "@/providers/session-provider";
 
 export default function DashboardScreen() {
@@ -13,7 +13,18 @@ export default function DashboardScreen() {
   const palette = Colors[colorScheme];
   const router = useRouter();
   const { user, applications } = useSession();
+  const isEmployer = user?.role === "Employer";
   const { data: jobs, isLoading, isError } = useJobs();
+
+  const {
+    data: employerJobs,
+    isLoading: isEmployerJobsLoading,
+    isError: isEmployerJobsError,
+  } = useEmployerJobs(isEmployer);
+  const appliedJobIds = useMemo(
+    () => new Set(applications.map((application) => application.jobId)),
+    [applications],
+  );
 
   if (isLoading) {
     return (
@@ -31,17 +42,16 @@ export default function DashboardScreen() {
     );
   }
 
-  const appliedJobIds = useMemo(
-    () => new Set(applications.map((application) => application.jobId)),
-    [applications],
-  );
-
+  console.log(jobs);
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
       <View style={styles.header}>
         <ThemedText type="title">Dashboard</ThemedText>
         <ThemedText>
-          Welcome {user?.email}. Browse jobs and apply with your resume.
+          Welcome {user?.email}. Browse all jobs
+          {isEmployer
+            ? " and review jobs posted by your account."
+            : " and apply with your resume."}
         </ThemedText>
       </View>
 
@@ -66,17 +76,57 @@ export default function DashboardScreen() {
             >
               <View style={styles.cardHeader}>
                 <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
-                {hasApplied ? (
+                {!isEmployer && hasApplied ? (
                   <ThemedText style={styles.appliedBadge}>Applied</ThemedText>
                 ) : null}
               </View>
-              <ThemedText>{item.company}</ThemedText>
-              <ThemedText>{`${item.location} - ${item.type}`}</ThemedText>
+              <ThemedText>{item.companyName}</ThemedText>
+              <ThemedText>{`${item.location} - ${item.jobType}`}</ThemedText>
               <ThemedText>{item.salaryRange}</ThemedText>
               <ThemedText>{item.summary}</ThemedText>
             </Pressable>
           );
         }}
+        ListFooterComponent={
+          isEmployer ? (
+            <View style={styles.employerSection}>
+              <ThemedText type="subtitle">Your posted jobs</ThemedText>
+              {isEmployerJobsLoading ? (
+                <ThemedText>Loading your jobs...</ThemedText>
+              ) : null}
+              {isEmployerJobsError ? (
+                <ThemedText>
+                  Unable to load your jobs. Please try again.
+                </ThemedText>
+              ) : null}
+              {!isEmployerJobsLoading &&
+              !isEmployerJobsError &&
+              !employerJobs?.length ? (
+                <ThemedText>You have not posted any jobs yet.</ThemedText>
+              ) : null}
+              {(employerJobs ?? []).map((item) => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => router.push(`/jobs/${item.id}`)}
+                  style={[
+                    styles.card,
+                    {
+                      borderColor: palette.icon,
+                      backgroundColor:
+                        colorScheme === "light" ? "#ffffff" : "#1f2123",
+                    },
+                  ]}
+                >
+                  <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+                  <ThemedText>{item.companyName}</ThemedText>
+                  <ThemedText>{`${item.location} - ${item.jobType} - ${item.experienceLevel}`}</ThemedText>
+                  <ThemedText>{item.salaryRange}</ThemedText>
+                  <ThemedText>{item.summary}</ThemedText>
+                </Pressable>
+              ))}
+            </View>
+          ) : null
+        }
       />
     </View>
   );
@@ -115,5 +165,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     fontSize: 12,
     lineHeight: 16,
+  },
+  employerSection: {
+    marginTop: 20,
+    gap: 12,
+    paddingBottom: 20,
   },
 });

@@ -1,4 +1,5 @@
 import { API_BASE_URL, apiFetch } from "@/api/client";
+import { SessionUser } from "@/stores/session-store";
 import { useMutation } from "@tanstack/react-query";
 
 export type LoginCredentials = {
@@ -7,8 +8,11 @@ export type LoginCredentials = {
 };
 
 export type LoginResponse = {
-  email: string;
-  token: string;
+  accessToken: string;
+  user: {
+    email: string;
+    role: SessionUser["role"];
+  };
 };
 
 export type SignupData = {
