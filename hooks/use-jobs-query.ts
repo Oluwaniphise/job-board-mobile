@@ -28,8 +28,24 @@ export type CreateJobPayload = {
   summary: string;
 };
 
+export type EmployerJobApplication = {
+  jobId: string;
+  resumeUrl?: string;
+  status: "Draft" | "Published" | "Archived";
+  createdAt: string;
+  updatedAt: string;
+  id: string;
+  candidateId: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    id: string;
+  };
+};
+
 const JOBS_QUERY_KEY = ["jobs"];
 const EMPLOYER_JOBS_QUERY_KEY = ["jobs", "employer"];
+const EMPLOYER_JOB_APPLICATIONS_QUERY_KEY = ["jobs", "employer", "applications"];
 
 export const useJobs = () => {
   return useQuery<JobListing[]>({
@@ -84,5 +100,25 @@ export const useCreateJobMutation = () => {
         body: JSON.stringify(payload),
       });
     },
+  });
+};
+
+export const useEmployerJobApplications = (
+  jobId: string | undefined,
+  enabled = true,
+) => {
+  return useQuery<EmployerJobApplication[]>({
+    queryKey: [...EMPLOYER_JOB_APPLICATIONS_QUERY_KEY, jobId],
+    queryFn: async () => {
+      if (!jobId) {
+        return [];
+      }
+
+      return apiFetch<EmployerJobApplication[]>(
+        `${API_BASE_URL}/employer/jobs/${jobId}/applications`,
+      );
+    },
+    enabled: enabled && !!jobId,
+    staleTime: 1000 * 30,
   });
 };

@@ -1,5 +1,6 @@
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -12,6 +13,7 @@ export default function ApplicationsScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const toast = useToast();
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, applications, syncMyApplications } = useSession();
   const isEmployer = user?.role === "Employer";
@@ -99,7 +101,8 @@ export default function ApplicationsScreen() {
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           ListEmptyComponent={<ThemedText>No jobs posted yet</ThemedText>}
           renderItem={({ item }) => (
-            <View
+            <Pressable
+              onPress={() => router.push(`/jobs/${item.id}/applications`)}
               style={[
                 styles.card,
                 {
@@ -113,7 +116,7 @@ export default function ApplicationsScreen() {
               <ThemedText>{item.companyName}</ThemedText>
               <ThemedText>{`${item.location} - ${item.jobType}`}</ThemedText>
               <ThemedText>{item.salaryRange}</ThemedText>
-            </View>
+            </Pressable>
           )}
         />
       </View>

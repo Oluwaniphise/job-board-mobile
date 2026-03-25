@@ -12,12 +12,12 @@ import {
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   useCreateJobMutation,
   useInvalidateJobs,
   type CreateJobPayload,
 } from "@/hooks/use-jobs-query";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@/providers/session-provider";
 
@@ -62,19 +62,20 @@ export default function CreateJobScreen() {
   const createJobMutation = useCreateJobMutation();
   const { user } = useSession();
 
-  const { control, handleSubmit, watch, setValue } = useForm<CreateJobFormValues>({
-    defaultValues: {
-      title: "",
-      companyName: "",
-      location: "",
-      salaryRange: "",
-      requiredSkills: "",
-      jobType: "Full-time",
-      experienceLevel: "Intern",
-      status: "Draft",
-      description: "",
-    },
-  });
+  const { control, handleSubmit, watch, setValue } =
+    useForm<CreateJobFormValues>({
+      defaultValues: {
+        title: "",
+        companyName: "",
+        location: "",
+        salaryRange: "",
+        requiredSkills: "",
+        jobType: "Full-time",
+        experienceLevel: "Intern",
+        status: "Draft",
+        description: "",
+      },
+    });
 
   if (user?.role !== "Employer") {
     return (
@@ -146,253 +147,259 @@ export default function CreateJobScreen() {
         <ThemedText type="title">Create New Job</ThemedText>
         <ThemedText>Fill in details below to publish a job posting.</ThemedText>
 
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Job Title</ThemedText>
-        <Controller
-          control={control}
-          name="title"
-          rules={{ required: "Job title is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="e.g. Senior Frontend Engineer"
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Company Name</ThemedText>
-        <Controller
-          control={control}
-          name="companyName"
-          rules={{ required: "Company name is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="Company Inc."
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Location</ThemedText>
-        <Controller
-          control={control}
-          name="location"
-          rules={{ required: "Location is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="Remote or City, Country"
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Salary Range</ThemedText>
-        <Controller
-          control={control}
-          name="salaryRange"
-          rules={{ required: "Salary range is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="$80,000 - $110,000"
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">
-          Required Skills (comma separated)
-        </ThemedText>
-        <Controller
-          control={control}
-          name="requiredSkills"
-          rules={{ required: "Required skills are needed" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="React, TypeScript, Tailwind"
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Job Type</ThemedText>
-        <View style={styles.optionsRow}>
-          {JOB_TYPES.map((option) => {
-            const active = selectedJobType === option;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setValue("jobType", option)}
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Job Title</ThemedText>
+          <Controller
+            control={control}
+            name="title"
+            rules={{ required: "Job title is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="e.g. Senior Frontend Engineer"
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
                 style={[
-                  styles.optionButton,
+                  styles.input,
                   {
-                    borderColor: active ? palette.tint : palette.icon,
+                    color: palette.text,
+                    borderColor: palette.icon,
                     backgroundColor:
-                      active && colorScheme === "light"
-                        ? "#d9f3fb"
-                        : active
-                          ? "#1f3e47"
-                          : "transparent",
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
                   },
                 ]}
-              >
-                <ThemedText type="defaultSemiBold">{option}</ThemedText>
-              </Pressable>
-            );
-          })}
+              />
+            )}
+          />
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Experience Level</ThemedText>
-        <View style={styles.optionsRow}>
-          {EXPERIENCE_LEVELS.map((option) => {
-            const active = selectedExperience === option;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setValue("experienceLevel", option)}
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Company Name</ThemedText>
+          <Controller
+            control={control}
+            name="companyName"
+            rules={{ required: "Company name is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="Company Inc."
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
                 style={[
-                  styles.optionButton,
+                  styles.input,
                   {
-                    borderColor: active ? palette.tint : palette.icon,
+                    color: palette.text,
+                    borderColor: palette.icon,
                     backgroundColor:
-                      active && colorScheme === "light"
-                        ? "#d9f3fb"
-                        : active
-                          ? "#1f3e47"
-                          : "transparent",
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
                   },
                 ]}
-              >
-                <ThemedText type="defaultSemiBold">{option}</ThemedText>
-              </Pressable>
-            );
-          })}
+              />
+            )}
+          />
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Status</ThemedText>
-        <View style={styles.optionsRow}>
-          {STATUS_OPTIONS.map((option) => {
-            const active = selectedStatus === option;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setValue("status", option)}
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Location</ThemedText>
+          <Controller
+            control={control}
+            name="location"
+            rules={{ required: "Location is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="Remote or City, Country"
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
                 style={[
-                  styles.optionButton,
+                  styles.input,
                   {
-                    borderColor: active ? palette.tint : palette.icon,
+                    color: palette.text,
+                    borderColor: palette.icon,
                     backgroundColor:
-                      active && colorScheme === "light"
-                        ? "#d9f3fb"
-                        : active
-                          ? "#1f3e47"
-                          : "transparent",
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
                   },
                 ]}
-              >
-                <ThemedText type="defaultSemiBold">{option}</ThemedText>
-              </Pressable>
-            );
-          })}
+              />
+            )}
+          />
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Job Description</ThemedText>
-        <Controller
-          control={control}
-          name="description"
-          rules={{ required: "Job description is required" }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              multiline
-              numberOfLines={6}
-              placeholder="Describe responsibilities, requirements and benefits."
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                styles.textArea,
-                {
-                  color: palette.text,
-                  borderColor: palette.icon,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-      </View>
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Salary Range</ThemedText>
+          <Controller
+            control={control}
+            name="salaryRange"
+            rules={{ required: "Salary range is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="$80,000 - $110,000"
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                style={[
+                  styles.input,
+                  {
+                    color: palette.text,
+                    borderColor: palette.icon,
+                    backgroundColor:
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
+                  },
+                ]}
+              />
+            )}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">
+            Required Skills (comma separated)
+          </ThemedText>
+          <Controller
+            control={control}
+            name="requiredSkills"
+            rules={{ required: "Required skills are needed" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="React, TypeScript, Tailwind"
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                style={[
+                  styles.input,
+                  {
+                    color: palette.text,
+                    borderColor: palette.icon,
+                    backgroundColor:
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
+                  },
+                ]}
+              />
+            )}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Job Type</ThemedText>
+          <View style={styles.optionsRow}>
+            {JOB_TYPES.map((option) => {
+              const active = selectedJobType === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setValue("jobType", option)}
+                  style={[
+                    styles.optionButton,
+                    {
+                      borderColor: active ? palette.tint : palette.icon,
+                      backgroundColor:
+                        active && colorScheme === "light"
+                          ? "#d9f3fb"
+                          : active
+                            ? "#1f3e47"
+                            : "transparent",
+                    },
+                  ]}
+                >
+                  <ThemedText type="defaultSemiBold">{option}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Experience Level</ThemedText>
+          <View style={styles.optionsRow}>
+            {EXPERIENCE_LEVELS.map((option) => {
+              const active = selectedExperience === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setValue("experienceLevel", option)}
+                  style={[
+                    styles.optionButton,
+                    {
+                      borderColor: active ? palette.tint : palette.icon,
+                      backgroundColor:
+                        active && colorScheme === "light"
+                          ? "#d9f3fb"
+                          : active
+                            ? "#1f3e47"
+                            : "transparent",
+                    },
+                  ]}
+                >
+                  <ThemedText type="defaultSemiBold">{option}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Status</ThemedText>
+          <View style={styles.optionsRow}>
+            {STATUS_OPTIONS.map((option) => {
+              const active = selectedStatus === option;
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setValue("status", option)}
+                  style={[
+                    styles.optionButton,
+                    {
+                      borderColor: active ? palette.tint : palette.icon,
+                      backgroundColor:
+                        active && colorScheme === "light"
+                          ? "#d9f3fb"
+                          : active
+                            ? "#1f3e47"
+                            : "transparent",
+                    },
+                  ]}
+                >
+                  <ThemedText type="defaultSemiBold">{option}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="defaultSemiBold">Job Description</ThemedText>
+          <Controller
+            control={control}
+            name="description"
+            rules={{ required: "Job description is required" }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                multiline
+                numberOfLines={8}
+                placeholder="Describe responsibilities, requirements and benefits."
+                placeholderTextColor={palette.icon}
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  {
+                    color: palette.text,
+                    borderColor: palette.icon,
+                    backgroundColor:
+                      colorScheme === "light" ? "#ffffff" : "#1f2123",
+                  },
+                ]}
+              />
+            )}
+          />
+        </View>
 
         <Pressable
           onPress={handleSubmit(onSubmit)}
