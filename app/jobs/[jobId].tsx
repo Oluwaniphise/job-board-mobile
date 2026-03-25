@@ -15,7 +15,6 @@ export default function JobDetailsScreen() {
   const isEmployer = user?.role === "Employer";
 
   const { data: job, isLoading, isError } = useJob(jobId);
-  console.log(job);
 
   if (isLoading) {
     return (
