@@ -103,6 +103,36 @@ export const useCreateJobMutation = () => {
   });
 };
 
+export const useUpdateJobMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      jobId,
+      payload,
+    }: {
+      jobId: string;
+      payload: CreateJobPayload;
+    }) => {
+      return apiFetch<{ message?: string }>(`${API_BASE_URL}/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    },
+  });
+};
+
+export const useDeleteJobMutation = () => {
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      return apiFetch<{ message?: string }>(`${API_BASE_URL}/jobs/${jobId}`, {
+        method: "DELETE",
+      });
+    },
+  });
+};
+
 export const useEmployerJobApplications = (
   jobId: string | undefined,
   enabled = true,

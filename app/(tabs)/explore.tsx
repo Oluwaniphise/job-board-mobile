@@ -1,11 +1,16 @@
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useEmployerJobs, useJobs } from "@/hooks/use-jobs-query";
+import {
+  useDeleteJobMutation,
+  useEmployerJobs,
+  useInvalidateJobs,
+  useJobs,
+} from "@/hooks/use-jobs-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@/providers/session-provider";
 
@@ -15,8 +20,11 @@ export default function ApplicationsScreen() {
   const toast = useToast();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
   const { user, applications, syncMyApplications } = useSession();
   const isEmployer = user?.role === "Employer";
+  const invalidateJobs = useInvalidateJobs();
+  const deleteJobMutation = useDeleteJobMutation();
 
   const { data: jobs } = useJobs();
   const {
@@ -56,6 +64,35 @@ export default function ApplicationsScreen() {
     }
   };
 
+  const handleDeleteJob = (jobId: string) => {
+    Alert.alert(
+      "Delete job",
+      "This will permanently remove the job post. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setDeletingJobId(jobId);
+            deleteJobMutation.mutate(jobId, {
+              onSuccess: () => {
+                invalidateJobs();
+                toast.success("Job deleted.");
+              },
+              onError: (error) => {
+                toast.error(error.message || "Failed to delete job.");
+              },
+              onSettled: () => {
+                setDeletingJobId(null);
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
+
   if (isEmployer) {
     if (isEmployerJobsLoading) {
       return (
@@ -90,10 +127,6 @@ export default function ApplicationsScreen() {
         <ThemedText type="subtitle" style={styles.employerHeader}>
           Your posted jobs
         </ThemedText>
-        <ThemedText style={styles.employerNote}>
-          Connect an employer applications endpoint to show incoming
-          applications per job.
-        </ThemedText>
         <FlatList
           data={employerJobs ?? []}
           keyExtractor={(item) => item.id}
@@ -101,8 +134,7 @@ export default function ApplicationsScreen() {
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           ListEmptyComponent={<ThemedText>No jobs posted yet</ThemedText>}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push(`/jobs/${item.id}/applications`)}
+            <View
               style={[
                 styles.card,
                 {
@@ -112,11 +144,30 @@ export default function ApplicationsScreen() {
                 },
               ]}
             >
-              <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
-              <ThemedText>{item.companyName}</ThemedText>
-              <ThemedText>{`${item.location} - ${item.jobType}`}</ThemedText>
-              <ThemedText>{item.salaryRange}</ThemedText>
-            </Pressable>
+              <Pressable onPress={() => router.push(`/jobs/${item.id}/applications`)}>
+                <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+                <ThemedText>{item.companyName}</ThemedText>
+                <ThemedText>{`${item.location} - ${item.jobType}`}</ThemedText>
+                <ThemedText>{item.salaryRange}</ThemedText>
+              </Pressable>
+              <View style={styles.actionRow}>
+                <Pressable
+                  onPress={() => router.push(`/jobs/${item.id}/edit`)}
+                  style={[styles.actionButton, { borderColor: palette.icon }]}
+                >
+                  <ThemedText type="defaultSemiBold">Edit</ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleDeleteJob(item.id)}
+                  disabled={deletingJobId === item.id}
+                  style={[styles.actionButton, styles.deleteAction]}
+                >
+                  <ThemedText style={styles.deleteActionText}>
+                    {deletingJobId === item.id ? "Deleting..." : "Delete"}
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
           )}
         />
       </View>
@@ -218,10 +269,26 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 6,
   },
-  employerHeader: {
-    marginBottom: 12,
+  actionRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    gap: 8,
   },
-  employerNote: {
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  deleteAction: {
+    borderColor: "#ef4444",
+    backgroundColor: "#fee2e2",
+  },
+  deleteActionText: {
+    color: "#b91c1c",
+    fontWeight: "600",
+  },
+  employerHeader: {
     marginBottom: 12,
   },
 });
