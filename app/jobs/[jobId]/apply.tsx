@@ -2,7 +2,13 @@ import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -21,7 +27,10 @@ export default function ApplyScreen() {
   const palette = Colors[colorScheme];
   const router = useRouter();
   const { user, applyToJob, getApplication } = useSession();
-  const [pickedResume, setPickedResume] = useState<{ name: string; uri: string } | null>(null);
+  const [pickedResume, setPickedResume] = useState<{
+    name: string;
+    uri: string;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: job, isLoading, isError } = useJob(jobId);
@@ -41,7 +50,13 @@ export default function ApplyScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: palette.background },
+        ]}
+      >
         <ThemedText type="subtitle">Loading job...</ThemedText>
       </View>
     );
@@ -49,7 +64,13 @@ export default function ApplyScreen() {
 
   if (isError || !job) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: palette.background },
+        ]}
+      >
         <ThemedText type="subtitle">Job not found</ThemedText>
       </View>
     );
@@ -57,8 +78,16 @@ export default function ApplyScreen() {
 
   if (isEmployer) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: palette.background }]}>
-        <ThemedText type="subtitle">Employers cannot apply for jobs.</ThemedText>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: palette.background },
+        ]}
+      >
+        <ThemedText type="subtitle">
+          Employers cannot apply for jobs.
+        </ThemedText>
       </View>
     );
   }
@@ -105,17 +134,29 @@ export default function ApplyScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: palette.background }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: palette.background }]}
+      contentContainerStyle={styles.content}
+    >
       <ThemedText type="subtitle">{job.title}</ThemedText>
-      <ThemedText>{`Company: ${job.company}`}</ThemedText>
-      <ThemedText>Attach your resume using a file picker or paste a resume URL.</ThemedText>
+      <ThemedText>{`Company: ${job.companyName}`}</ThemedText>
+      <ThemedText>
+        Attach your resume using a file picker or paste a resume URL.
+      </ThemedText>
 
-      <Pressable onPress={pickResume} style={[styles.pickerButton, { borderColor: palette.icon }]}>
-        <ThemedText type="defaultSemiBold">{pickedResume ? pickedResume.name : "Choose resume file"}</ThemedText>
+      <Pressable
+        onPress={pickResume}
+        style={[styles.pickerButton, { borderColor: palette.icon }]}
+      >
+        <ThemedText type="defaultSemiBold">
+          {pickedResume ? pickedResume.name : "Choose resume file"}
+        </ThemedText>
       </Pressable>
 
       <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">Resume URL (optional if file is selected)</ThemedText>
+        <ThemedText type="defaultSemiBold">
+          Resume URL (optional if file is selected)
+        </ThemedText>
         <Controller
           control={control}
           name="resumeUrl"
@@ -143,13 +184,18 @@ export default function ApplyScreen() {
                 {
                   borderColor: errors.resumeUrl ? "#e5484d" : palette.icon,
                   color: palette.text,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
+                  backgroundColor:
+                    colorScheme === "light" ? "#ffffff" : "#1f2123",
                 },
               ]}
             />
           )}
         />
-        {errors.resumeUrl ? <ThemedText style={styles.errorText}>{errors.resumeUrl.message}</ThemedText> : null}
+        {errors.resumeUrl ? (
+          <ThemedText style={styles.errorText}>
+            {errors.resumeUrl.message}
+          </ThemedText>
+        ) : null}
       </View>
 
       <View style={styles.field}>
@@ -172,7 +218,8 @@ export default function ApplyScreen() {
                 {
                   borderColor: palette.icon,
                   color: palette.text,
-                  backgroundColor: colorScheme === "light" ? "#ffffff" : "#1f2123",
+                  backgroundColor:
+                    colorScheme === "light" ? "#ffffff" : "#1f2123",
                 },
               ]}
             />
