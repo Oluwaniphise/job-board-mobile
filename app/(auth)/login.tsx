@@ -1,3 +1,5 @@
+import { Eye, EyeOff } from "lucide-react-native";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -27,6 +29,7 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const router = useRouter();
   const toast = useToast();
+  const [showPassword, setShowPassword] = useState(false);
   const setUser = useSessionStore((state) => state.setUser);
   const loginMutation = useLoginMutation();
 
@@ -125,25 +128,38 @@ export default function LoginScreen() {
                 },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  secureTextEntry
-                  placeholder="Enter your password"
-                  placeholderTextColor={palette.icon}
-                  value={value}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: errors.password ? "#e5484d" : palette.icon,
-                      color: palette.text,
-                      backgroundColor:
-                        colorScheme === "light" ? "#ffffff" : "#1f2123",
-                    },
-                  ]}
-                />
+                <View style={styles.passwordToggleRow}>
+                  <TextInput
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    secureTextEntry={!showPassword}
+                    placeholder="Enter your password"
+                    placeholderTextColor={palette.icon}
+                    value={value}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    style={[
+                      styles.input,
+                      styles.passwordInput,
+                      {
+                        borderColor: errors.password ? "#e5484d" : palette.icon,
+                        color: palette.text,
+                        backgroundColor:
+                          colorScheme === "light" ? "#ffffff" : "#1f2123",
+                      },
+                    ]}
+                  />
+                  <Pressable
+                    style={styles.passwordToggleButton}
+                    onPress={() => setShowPassword((prev: boolean) => !prev)}
+                  >
+                    {showPassword ? (
+                      <EyeOff color={palette.text} size={20} />
+                    ) : (
+                      <Eye color={palette.text} size={20} />
+                    )}
+                  </Pressable>
+                </View>
               )}
             />
             {errors.password ? (
@@ -173,7 +189,7 @@ export default function LoginScreen() {
           </Pressable>
 
           <View style={styles.footer}>
-            <ThemedText>New here?</ThemedText>
+            <ThemedText>New here? </ThemedText>
             <Link href="/signup" style={styles.link}>
               <ThemedText type="link">Create an account</ThemedText>
             </Link>
@@ -207,7 +223,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryButtonText: {
-    color: "#ffffff",
+    color: "#000",
     fontWeight: "600",
     fontSize: 16,
   },
@@ -215,6 +231,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+  },
+  passwordToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  passwordToggleButton: {
+    padding: 10,
   },
   link: {
     alignSelf: "flex-start",

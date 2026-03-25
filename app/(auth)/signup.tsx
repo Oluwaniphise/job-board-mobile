@@ -1,4 +1,5 @@
 import { Link, useRouter } from "expo-router";
+import { Eye, EyeOff } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -34,6 +35,7 @@ type SignupFormValues = {
 export default function SignupScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const [role, setRole] = useState<RoleOption>("Candidate");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const toast = useToast();
   const setUser = useSessionStore((state) => state.setUser);
@@ -227,27 +229,40 @@ export default function SignupScreen() {
                   },
                 }}
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    autoCapitalize="none"
-                    autoComplete="password"
-                    secureTextEntry
-                    placeholder="Create a password"
-                    placeholderTextColor={palette.icon}
-                    value={value}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: errors.passwordHash
-                          ? "#e5484d"
-                          : palette.icon,
-                        color: palette.text,
-                        backgroundColor:
-                          colorScheme === "light" ? "#ffffff" : "#1f2123",
-                      },
-                    ]}
-                  />
+                  <View style={styles.passwordToggleRow}>
+                    <TextInput
+                      autoCapitalize="none"
+                      autoComplete="password"
+                      secureTextEntry={!showPassword}
+                      placeholder="Create a password"
+                      placeholderTextColor={palette.icon}
+                      value={value}
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      style={[
+                        styles.input,
+                        styles.passwordInput,
+                        {
+                          borderColor: errors.passwordHash
+                            ? "#e5484d"
+                            : palette.icon,
+                          color: palette.text,
+                          backgroundColor:
+                            colorScheme === "light" ? "#ffffff" : "#1f2123",
+                        },
+                      ]}
+                    />
+                    <Pressable
+                      style={styles.passwordToggleButton}
+                      onPress={() => setShowPassword((prev: boolean) => !prev)}
+                    >
+                      {showPassword ? (
+                        <EyeOff color={palette.text} size={20} />
+                      ) : (
+                        <Eye color={palette.text} size={20} />
+                      )}
+                    </Pressable>
+                  </View>
                 )}
               />
               {errors.passwordHash ? (
@@ -279,7 +294,9 @@ export default function SignupScreen() {
                       <ThemedText
                         style={[
                           styles.roleLabel,
-                          { color: isActive ? "#ffffff" : palette.text },
+                          {
+                            color: isActive ? palette.background : palette.text,
+                          },
                         ]}
                       >
                         {option === "Candidate" ? "Candidate" : "Employer"}
@@ -296,7 +313,7 @@ export default function SignupScreen() {
                 styles.primaryButton,
                 {
                   backgroundColor: isFormReady ? palette.tint : palette.icon,
-                  opacity: isFormReady ? 1 : 0.55,
+                  opacity: isFormReady && !signupMutation.isPending ? 1 : 0.55,
                 },
               ]}
               onPress={handleSubmit(onSubmit)}
@@ -372,6 +389,17 @@ const styles = StyleSheet.create({
   roleLabel: {
     fontWeight: "600",
   },
+  passwordToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  passwordToggleButton: {
+    padding: 10,
+  },
   primaryButton: {
     borderRadius: 999,
     paddingVertical: 14,
@@ -379,7 +407,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   primaryButtonText: {
-    color: "#ffffff",
+    color: "#000",
     fontWeight: "600",
     fontSize: 16,
   },
