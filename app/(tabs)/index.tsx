@@ -42,7 +42,6 @@ export default function DashboardScreen() {
     );
   }
 
-  console.log(jobs);
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
       <View style={styles.header}>

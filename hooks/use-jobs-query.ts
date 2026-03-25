@@ -11,7 +11,7 @@ export type JobListing = {
   salaryRange: string;
   experienceLevel: string;
   summary: string;
-  requirements: string[];
+  requiredSkills: string[];
 };
 
 const JOBS_QUERY_KEY = ["jobs"];

@@ -15,6 +15,7 @@ export default function JobDetailsScreen() {
   const isEmployer = user?.role === "Employer";
 
   const { data: job, isLoading, isError } = useJob(jobId);
+  console.log(job);
 
   if (isLoading) {
     return (
@@ -54,8 +55,8 @@ export default function JobDetailsScreen() {
     >
       <View style={styles.header}>
         <ThemedText type="title">{job.title}</ThemedText>
-        <ThemedText>{job.company}</ThemedText>
-        <ThemedText>{`${job.location} • ${job.type}`}</ThemedText>
+        <ThemedText>{job.companyName}</ThemedText>
+        <ThemedText>{`${job.location} • ${job.jobType}`}</ThemedText>
         <ThemedText>{job.salaryRange}</ThemedText>
       </View>
 
@@ -66,7 +67,7 @@ export default function JobDetailsScreen() {
 
       <View style={styles.section}>
         <ThemedText type="subtitle">Requirements</ThemedText>
-        {job.requirements.map((requirement) => (
+        {job.requiredSkills.map((requirement) => (
           <ThemedText key={requirement}>{`\u2022 ${requirement}`}</ThemedText>
         ))}
       </View>
