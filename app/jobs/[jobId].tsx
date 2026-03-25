@@ -1,4 +1,5 @@
 import { Link, useLocalSearchParams } from "expo-router";
+import { ArrowUpRight } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -80,13 +81,33 @@ export default function JobDetailsScreen() {
       ) : null}
 
       {!isEmployer ? (
-        <Link href={`/jobs/${job.id}/apply`} asChild>
-          <Pressable style={[styles.button, { backgroundColor: palette.tint }]}>
-            <ThemedText style={styles.buttonLabel}>
-              {applied ? "Update application" : "Apply now"}
-            </ThemedText>
-          </Pressable>
-        </Link>
+        <View style={styles.actionRow}>
+          <Link href={`/jobs/${job.id}/apply`} asChild>
+            <Pressable
+              style={[
+                styles.button,
+                {
+                  backgroundColor: palette.tint,
+                  shadowColor: palette.tint,
+                },
+              ]}
+            >
+              <View style={styles.buttonContent}>
+                <View style={styles.buttonTextWrap}>
+                  <ThemedText style={styles.buttonLabel}>
+                    {applied ? "Update application" : "Apply now"}
+                  </ThemedText>
+                  <ThemedText style={styles.buttonSubLabel}>
+                    {applied
+                      ? "Edit your resume and cover letter."
+                      : "Submit your resume in one step."}
+                  </ThemedText>
+                </View>
+                <ArrowUpRight size={20} color="#ffffff" />
+              </View>
+            </Pressable>
+          </Link>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -118,13 +139,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   button: {
-    borderRadius: 999,
+    borderRadius: 18,
     paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  buttonContent: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  buttonTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  actionRow: {
+    gap: 10,
   },
   buttonLabel: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+  },
+  buttonSubLabel: {
+    color: "#e8f7ff",
+    fontSize: 13,
   },
 });

@@ -52,6 +52,7 @@ export default function RootLayout() {
               name="jobs/[jobId]/apply"
               options={{ title: "Apply" }}
             />
+            <Stack.Screen name="jobs/create" options={{ title: "Create Job" }} />
             <Stack.Screen
               name="modal"
               options={{ presentation: "modal", title: "Modal" }}

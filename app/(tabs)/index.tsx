@@ -1,30 +1,38 @@
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 
+import { HelloWave } from "@/components/hello-wave";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useEmployerJobs, useJobs } from "@/hooks/use-jobs-query";
+import { useJobs } from "@/hooks/use-jobs-query";
 import { useSession } from "@/providers/session-provider";
 
 export default function DashboardScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const router = useRouter();
-  const { user, applications } = useSession();
+  const { user, applications, syncMyApplications } = useSession();
   const isEmployer = user?.role === "Employer";
   const { data: jobs, isLoading, isError } = useJobs();
 
-  const {
-    data: employerJobs,
-    isLoading: isEmployerJobsLoading,
-    isError: isEmployerJobsError,
-  } = useEmployerJobs(isEmployer);
   const appliedJobIds = useMemo(
     () => new Set(applications.map((application) => application.jobId)),
     [applications],
   );
+
+  useEffect(() => {
+    if (isEmployer) {
+      return;
+    }
+
+    if (typeof syncMyApplications !== "function") {
+      return;
+    }
+
+    syncMyApplications().catch(() => {});
+  }, [isEmployer, syncMyApplications]);
 
   if (isLoading) {
     return (
@@ -45,7 +53,10 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">Dashboard</ThemedText>
+        <View style={styles.headerTitleRow}>
+          <ThemedText type="title">Dashboard</ThemedText>
+          <HelloWave />
+        </View>
         <ThemedText>
           Welcome {user?.email}. Browse all jobs
           {isEmployer
@@ -86,46 +97,6 @@ export default function DashboardScreen() {
             </Pressable>
           );
         }}
-        ListFooterComponent={
-          isEmployer ? (
-            <View style={styles.employerSection}>
-              <ThemedText type="subtitle">Your posted jobs</ThemedText>
-              {isEmployerJobsLoading ? (
-                <ThemedText>Loading your jobs...</ThemedText>
-              ) : null}
-              {isEmployerJobsError ? (
-                <ThemedText>
-                  Unable to load your jobs. Please try again.
-                </ThemedText>
-              ) : null}
-              {!isEmployerJobsLoading &&
-              !isEmployerJobsError &&
-              !employerJobs?.length ? (
-                <ThemedText>You have not posted any jobs yet.</ThemedText>
-              ) : null}
-              {(employerJobs ?? []).map((item) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => router.push(`/jobs/${item.id}`)}
-                  style={[
-                    styles.card,
-                    {
-                      borderColor: palette.icon,
-                      backgroundColor:
-                        colorScheme === "light" ? "#ffffff" : "#1f2123",
-                    },
-                  ]}
-                >
-                  <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
-                  <ThemedText>{item.companyName}</ThemedText>
-                  <ThemedText>{`${item.location} - ${item.jobType} - ${item.experienceLevel}`}</ThemedText>
-                  <ThemedText>{item.salaryRange}</ThemedText>
-                  <ThemedText>{item.summary}</ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          ) : null
-        }
       />
     </View>
   );
@@ -136,10 +107,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 88,
   },
   header: {
     gap: 8,
     marginBottom: 16,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   listContent: {
     paddingBottom: 24,

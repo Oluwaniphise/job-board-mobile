@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL, apiFetch } from "@/api/client";
 import { create } from "zustand";
 
 export type SessionUser = {
@@ -20,15 +21,105 @@ type SessionState = {
   applications: JobApplication[];
   isHydrating: boolean;
   hydrate: () => Promise<void>;
+  syncMyApplications: () => Promise<JobApplication[]>;
   setUser: (user: SessionUser) => void;
   signOut: () => Promise<void>;
-  applyToJob: (application: Omit<JobApplication, "appliedAt">) => Promise<void>;
+  applyToJob: (application: {
+    jobId: string;
+    resumeName: string;
+    resumeUri: string;
+    resumeType?: string;
+    coverLetter?: string;
+  }) => Promise<void>;
   hasApplied: (jobId: string) => boolean;
   getApplication: (jobId: string) => JobApplication | undefined;
 };
 
 const SESSION_USER_KEY = "session_user";
 const JOB_APPLICATIONS_KEY = "job_applications";
+
+function extractApplicationsPayload(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  if (Array.isArray(candidate.applications)) {
+    return candidate.applications;
+  }
+
+  if (candidate.data && typeof candidate.data === "object") {
+    const data = candidate.data as Record<string, unknown>;
+    if (Array.isArray(data.applications)) {
+      return data.applications;
+    }
+    if (Array.isArray(data.items)) {
+      return data.items;
+    }
+  }
+
+  if (Array.isArray(candidate.items)) {
+    return candidate.items;
+  }
+
+  return [];
+}
+
+function normalizeApplication(
+  raw: unknown,
+  fallbackJobId?: string,
+): JobApplication | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+  const nestedJob =
+    item.job && typeof item.job === "object"
+      ? (item.job as Record<string, unknown>)
+      : undefined;
+
+  const rawJobId =
+    fallbackJobId ??
+    item.jobId ??
+    item.job_id ??
+    item.jobID ??
+    nestedJob?.id ??
+    nestedJob?.jobId;
+
+  if (!rawJobId) {
+    return null;
+  }
+
+  const rawResumeName =
+    item.resumeName ?? item.resume_name ?? item.file_name ?? "Resume";
+  const rawResumeUri =
+    item.resumeUri ??
+    item.resume_uri ??
+    item.resumeUrl ??
+    item.resume_url ??
+    item.file_url ??
+    "";
+  const rawCoverLetter = item.coverLetter ?? item.cover_letter;
+  const rawAppliedAt =
+    item.appliedAt ?? item.applied_at ?? item.createdAt ?? item.created_at;
+
+  return {
+    jobId: String(rawJobId),
+    resumeName: String(rawResumeName),
+    resumeUri: String(rawResumeUri),
+    coverLetter:
+      typeof rawCoverLetter === "string" ? rawCoverLetter : undefined,
+    appliedAt:
+      typeof rawAppliedAt === "string"
+        ? rawAppliedAt
+        : new Date().toISOString(),
+  };
+}
 
 function normalizeStoredUser(raw: unknown): SessionUser | null {
   if (!raw || typeof raw !== "object") {
@@ -70,6 +161,24 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
+  syncMyApplications: async () => {
+    const user = get().user;
+    if (!user || user.role !== "Candidate") {
+      return get().applications;
+    }
+
+    const response = await apiFetch<unknown>(
+      `${API_BASE_URL}/candidate/applications/me`,
+    );
+    const list = extractApplicationsPayload(response)
+      .map((item) => normalizeApplication(item))
+      .filter((item): item is JobApplication => !!item);
+
+    set({ applications: list });
+    await AsyncStorage.setItem(JOB_APPLICATIONS_KEY, JSON.stringify(list));
+    return list;
+  },
+
   setUser: (user) => {
     set({ user });
     AsyncStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
@@ -82,8 +191,32 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   applyToJob: async (application) => {
+    const formData = new FormData();
+
+    const trimmedCoverLetter = application.coverLetter?.trim();
+    if (trimmedCoverLetter) {
+      formData.append("cover_letter", trimmedCoverLetter);
+    }
+
+    formData.append("resume", {
+      uri: application.resumeUri,
+      name: application.resumeName,
+      type: application.resumeType ?? "application/octet-stream",
+    } as any);
+
+    await apiFetch<{ message?: string }>(
+      `${API_BASE_URL}/candidate/jobs/${application.jobId}/applications`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
     const next: JobApplication = {
-      ...application,
+      jobId: application.jobId,
+      resumeName: application.resumeName,
+      resumeUri: application.resumeUri,
+      coverLetter: trimmedCoverLetter,
       appliedAt: new Date().toISOString(),
     };
 

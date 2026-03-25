@@ -14,10 +14,10 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useJob } from "@/hooks/use-jobs-query";
+import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@/providers/session-provider";
 
 type ApplyFormValues = {
-  resumeUrl: string;
   coverLetter: string;
 };
 
@@ -26,10 +26,12 @@ export default function ApplyScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const router = useRouter();
+  const toast = useToast();
   const { user, applyToJob, getApplication } = useSession();
   const [pickedResume, setPickedResume] = useState<{
     name: string;
     uri: string;
+    mimeType?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,13 +39,8 @@ export default function ApplyScreen() {
   const isEmployer = user?.role === "Employer";
   const existingApplication = job ? getApplication(job.id) : undefined;
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ApplyFormValues>({
+  const { control, handleSubmit } = useForm<ApplyFormValues>({
     defaultValues: {
-      resumeUrl: existingApplication?.resumeUri ?? "",
       coverLetter: existingApplication?.coverLetter ?? "",
     },
   });
@@ -108,26 +105,42 @@ export default function ApplyScreen() {
     }
 
     const asset = result.assets[0];
-    setPickedResume({ name: asset.name, uri: asset.uri });
+    setPickedResume({
+      name: asset.name,
+      uri: asset.uri,
+      mimeType: asset.mimeType,
+    });
   };
 
   const onSubmit = async (values: ApplyFormValues) => {
-    const resumeSource = pickedResume?.uri || values.resumeUrl.trim();
-    const resumeName = pickedResume?.name || "Resume link";
-
-    if (!resumeSource) {
+    if (!pickedResume) {
+      toast.error("Select a resume file before submitting.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await applyToJob({
+      const res = await applyToJob({
         jobId: job.id,
-        resumeName,
-        resumeUri: resumeSource,
+        resumeName: pickedResume.name,
+        resumeUri: pickedResume.uri,
+        resumeType: pickedResume.mimeType,
         coverLetter: values.coverLetter.trim() || undefined,
       });
+
+      console.log(res);
+      toast.success(
+        existingApplication
+          ? "Application updated successfully."
+          : "Application submitted successfully.",
+      );
       router.replace(`/jobs/${job.id}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit application.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +154,7 @@ export default function ApplyScreen() {
       <ThemedText type="subtitle">{job.title}</ThemedText>
       <ThemedText>{`Company: ${job.companyName}`}</ThemedText>
       <ThemedText>
-        Attach your resume using a file picker or paste a resume URL.
+        Attach your resume file and submit your cover letter.
       </ThemedText>
 
       <Pressable
@@ -152,51 +165,6 @@ export default function ApplyScreen() {
           {pickedResume ? pickedResume.name : "Choose resume file"}
         </ThemedText>
       </Pressable>
-
-      <View style={styles.field}>
-        <ThemedText type="defaultSemiBold">
-          Resume URL (optional if file is selected)
-        </ThemedText>
-        <Controller
-          control={control}
-          name="resumeUrl"
-          rules={{
-            validate: (value) => {
-              if (pickedResume) {
-                return true;
-              }
-              if (!value.trim()) {
-                return "Provide a resume URL or select a file.";
-              }
-              return true;
-            },
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              autoCapitalize="none"
-              placeholder="https://yourdomain.com/resume.pdf"
-              placeholderTextColor={palette.icon}
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              style={[
-                styles.input,
-                {
-                  borderColor: errors.resumeUrl ? "#e5484d" : palette.icon,
-                  color: palette.text,
-                  backgroundColor:
-                    colorScheme === "light" ? "#ffffff" : "#1f2123",
-                },
-              ]}
-            />
-          )}
-        />
-        {errors.resumeUrl ? (
-          <ThemedText style={styles.errorText}>
-            {errors.resumeUrl.message}
-          </ThemedText>
-        ) : null}
-      </View>
 
       <View style={styles.field}>
         <ThemedText type="defaultSemiBold">Cover letter (optional)</ThemedText>
@@ -290,12 +258,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitText: {
-    color: "#ffffff",
+    color: "#000",
     fontWeight: "600",
     fontSize: 16,
-  },
-  errorText: {
-    color: "#e5484d",
-    fontSize: 13,
   },
 });

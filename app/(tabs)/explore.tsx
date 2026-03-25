@@ -1,15 +1,19 @@
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEmployerJobs, useJobs } from "@/hooks/use-jobs-query";
+import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@/providers/session-provider";
 
 export default function ApplicationsScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
-  const { user, applications } = useSession();
+  const toast = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { user, applications, syncMyApplications } = useSession();
   const isEmployer = user?.role === "Employer";
 
   const { data: jobs } = useJobs();
@@ -18,6 +22,37 @@ export default function ApplicationsScreen() {
     isLoading: isEmployerJobsLoading,
     isError: isEmployerJobsError,
   } = useEmployerJobs(isEmployer);
+
+  useEffect(() => {
+    if (isEmployer) {
+      return;
+    }
+
+    if (typeof syncMyApplications !== "function") {
+      return;
+    }
+
+    syncMyApplications().catch(() => {});
+  }, [isEmployer, syncMyApplications]);
+
+  const handleRefresh = async () => {
+    if (typeof syncMyApplications !== "function") {
+      toast.error("Please reload the app to use refresh.");
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      await syncMyApplications();
+      toast.success("Applications refreshed.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to refresh applications.",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (isEmployer) {
     if (isEmployerJobsLoading) {
@@ -98,12 +133,30 @@ export default function ApplicationsScreen() {
         <ThemedText>
           Go to Dashboard, open a job, and apply with your resume.
         </ThemedText>
+        <Pressable
+          onPress={handleRefresh}
+          disabled={isRefreshing}
+          style={[styles.refreshButton, { borderColor: palette.icon }]}
+        >
+          <ThemedText type="defaultSemiBold">
+            {isRefreshing ? "Refreshing..." : "Refresh applications"}
+          </ThemedText>
+        </Pressable>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
+      <Pressable
+        onPress={handleRefresh}
+        disabled={isRefreshing}
+        style={[styles.refreshButton, { borderColor: palette.icon }]}
+      >
+        <ThemedText type="defaultSemiBold">
+          {isRefreshing ? "Refreshing..." : "Refresh applications"}
+        </ThemedText>
+      </Pressable>
       <FlatList
         data={applications}
         keyExtractor={(item) => item.jobId}
@@ -145,6 +198,13 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: "center",
     gap: 8,
+  },
+  refreshButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginBottom: 12,
   },
   listContent: {
     paddingBottom: 24,

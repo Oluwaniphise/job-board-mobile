@@ -1,5 +1,5 @@
 import { API_BASE_URL, apiFetch } from "@/api/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type JobListing = {
   id: string;
@@ -12,6 +12,20 @@ export type JobListing = {
   experienceLevel: string;
   summary: string;
   requiredSkills: string[];
+  status?: "Draft" | "Published" | "Archived";
+};
+
+export type CreateJobPayload = {
+  title: string;
+  companyName: string;
+  location: string;
+  salaryRange: string;
+  requiredSkills: string[];
+  jobType: "Full-time" | "Part-time" | "Contract";
+  experienceLevel: string;
+  status: "Draft" | "Published" | "Archived";
+  description: string;
+  summary: string;
 };
 
 const JOBS_QUERY_KEY = ["jobs"];
@@ -57,4 +71,18 @@ export const useInvalidateJobs = () => {
     queryClient.invalidateQueries({ queryKey: JOBS_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: EMPLOYER_JOBS_QUERY_KEY });
   };
+};
+
+export const useCreateJobMutation = () => {
+  return useMutation({
+    mutationFn: async (payload: CreateJobPayload) => {
+      return apiFetch<{ id?: string; message?: string }>(`${API_BASE_URL}/jobs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    },
+  });
 };
